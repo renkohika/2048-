@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #faf8ef;
+            margin: 0;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #cdc1b4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+        }
+        .controls button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 18px;
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="grid"></div>
+    <div class="controls">
+        <button onclick="move('up')">Up</button>
+        <button onclick="move('left')">Left</button>
+        <button onclick="move('down')">Down</button>
+        <button onclick="move('right')">Right</button>
+    </div>
+    <script>
+        const gridSize = 4;
+        const grid = new Array(gridSize).fill(null).map(() => new Array(gridSize).fill(0));
+
+        const images = {
+            2: 'C:/Users/admin/Pictures/2048/2.jpg',  // Replace with actual image paths
+            4: 'C:/Users/admin/Pictures/2048/4.jpg',
+            8: 'C:/Users/admin/Pictures/2048/8.jpg',
+            16: 'C:/Users/admin/Pictures/2048/16.jpg',
+            32: 'C:/Users/admin/Pictures/2048/32.jpg',
+            64: 'C:/Users/admin/Pictures/2048/64.jpg',
+            128: 'C:/Users/admin/Pictures/2048/128.jpg',
+            256: 'C:/Users/admin/Pictures/2048/256.jpg',
+            512: 'C:/Users/admin/Pictures/2048/512.jpg',
+            1024: 'C:/Users/admin/Pictures/2048/1024.jpg',
+            2048: 'C:/Users/admin/Pictures/2048/2048.jpg'
+        };
+
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * Math.floor(max));
+        }
+
+        function createRandomTile() {
+            let emptyCells = [];
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    if (grid[i][j] === 0) {
+                        emptyCells.push({ x: i, y: j });
+                    }
+                }
+            }
+            if (emptyCells.length === 0) return;
+
+            let randomCell = emptyCells[getRandomInt(emptyCells.length)];
+            grid[randomCell.x][randomCell.y] = Math.random() < 0.9 ? 2 : 4;
+        }
+
+        function drawGrid() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    if (grid[i][j] !== 0) {
+                        const img = document.createElement('img');
+                        img.src = images[grid[i][j]];
+                        cell.appendChild(img);
+                    }
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+        
+        function checkWin() {
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    if (grid[i][j] === 2048) {
+                        alert('恭喜殿下登基！');
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function slideRow(row) {
+            let arr = row.filter(val => val);
+            let missing = gridSize - arr.length;
+            let zeros = Array(missing).fill(0);
+            arr = zeros.concat(arr);
+            for (let i = gridSize - 1; i > 0; i--) {
+                if (arr[i] === arr[i - 1]) {
+                    arr[i] *= 2;
+                    arr[i - 1] = 0;
+                }
+            }
+            arr = arr.filter(val => val);
+            missing = gridSize - arr.length;
+            zeros = Array(missing).fill(0);
+            arr = zeros.concat(arr);
+            return arr;
+        }
+
+        function rotateGrid(grid) {
+            let newGrid = grid.map(row => row.slice());
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    newGrid[j][gridSize - i - 1] = grid[i][j];
+                }
+            }
+            return newGrid;
+        }
+
+        function move(direction) {
+            for (let i = 0; i < gridSize; i++) {
+                grid[i] = grid[i].slice();
+            }
+            let moved = false
+            if (direction === 'left') {
+                for (let i = 0; i < gridSize; i++) {
+                    let newRow = slideRow(grid[i]);
+                    if (newRow.toString() !== grid[i].toString()) {
+                        moved = true;
+                    }
+                    grid[i] = newRow;
+                }
+            } else if (direction === 'right') {
+                for (let i = 0; i < gridSize; i++) {
+                    let oldRow = grid[i].slice().reverse();
+                    let newRow = slideRow(oldRow).reverse();
+                    if (newRow.toString() !== grid[i].toString()) {
+                        moved = true;
+                    }
+                    grid[i] = newRow;
+                }
+            } else if (direction === 'up') {
+                grid = rotateGrid(grid);
+                grid = rotateGrid(grid);
+                grid = rotateGrid(grid);
+                for (let i = 0; i < gridSize; i++) {
+                    let newRow = slideRow(grid[i]);
+                    if (newRow.toString() !== grid[i].toString()) {
+                        moved = true;
+                    }
+                    grid[i] = newRow;
+                }
+                grid = rotateGrid(grid);
+            } else if (direction === 'down') {
+                grid = rotateGrid(grid);
+                for (let i = 0; i < gridSize; i++) {
+                    let newRow = slideRow(grid[i]);
+                    if (newRow.toString() !== grid[i].toString()) {
+                        moved = true;
+                    }
+                    grid[i] = newRow;
+                }
+                grid = rotateGrid(grid);
+                grid = rotateGrid(grid);
+                grid = rotateGrid(grid);
+            }
+            if (moved) {
+                createRandomTile();
+            }
+            drawGrid();
+            checkWin();
+        }
+
+        createRandomTile();
+        createRandomTile();
+        drawGrid();
+    </script>
+</body>
+</html>
